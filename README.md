@@ -1,28 +1,76 @@
 # Java Echo Server
 
-This project implements a simple Echo Server in Java using the `java.net` package. The server listens for incoming client connections and echoes back any received messages. The project utilizes several modern Java libraries and tools to streamline development and ensure code quality, such as Lombok for code generation, JCommander for argument parsing, SLF4J for logging, JUnit 5 for testing, and Mockito for mocking.
+A high-performance, multi-threaded TCP Echo Server built in Java. The server listens for incoming TCP connections, handles multiple client connections concurrently using a thread pool, and echoes back any received messages line-by-line.
 
 ## Features
 
-- **Echo Server**: Implements a TCP server that listens on a configurable port and echoes client messages.
-- **Boilerplate Code Generation**: Uses Lombok to eliminate boilerplate code (getters, setters, etc.).
-- **Command-line Argument Parsing**: Uses JCommander for easy parsing of command-line arguments like port configuration.
-- **Logging**: SLF4J is used for logging server activities, errors, and client communication.
-- **Unit Testing**: JUnit 5 is used for writing unit tests, with Mockito for mocking dependencies in tests.
-- **Gradle Build**: Uses Gradle with Kotlin DSL to manage dependencies, compile the code, and run tests.
-- **Fat JAR Generation**: Customized Gradle build to create a fat JAR for easy deployment and execution.
+- **Concurrent TCP Server**: Handles multiple client connections simultaneously using a cached thread pool (`ExecutorService`).
+- **CLI Argument Parsing**: Easily configurable server parameters (e.g., `-p` / `--port`, `-h` / `--help`) powered by **JCommander**.
+- **Graceful Shutdown**: Automatically registers a JVM shutdown hook to close listening sockets and clean up worker threads on termination.
+- **Logging**: Configured with **SLF4J** for detailed operational logging and debugging.
+- **Comprehensive Unit & Integration Tests**: Built with **JUnit 5** to test single-client and multi-client echo functionality.
+- **Fat JAR Packaging**: Customized Gradle build configuration to produce a runnable standalone JAR.
 
-## Getting Started
+---
 
-### Prerequisites
+## Prerequisites
 
-To build and run the project, you need the following software installed:
+- **Java Development Kit (JDK)** 11 or higher
+- **Gradle** 7+ (or use the included `./gradlew` wrapper)
 
-- Java 11 or later
-- Gradle
-- Git
+---
 
-### Clone the Repository
+## Building and Running
 
-git clone https://github.com/yourusername/echo-server.git
-cd echo-server
+### 1. Build the Project & Fat JAR
+To compile the source code, run tests, and assemble the runnable fat JAR:
+```bash
+./gradlew build
+```
+
+### 2. Run the Server
+
+#### Option A: Using Gradle Wrapper
+Run the server with the default port (`1234`):
+```bash
+./gradlew run
+```
+
+Or pass custom CLI arguments:
+```bash
+./gradlew run --args="-p 8080"
+```
+
+Display command-line help options:
+```bash
+./gradlew run --args="--help"
+```
+
+#### Option B: Running the Executable Fat JAR
+After building, run the generated executable JAR directly:
+```bash
+java -jar build/libs/echo-server-1.0-SNAPSHOT.jar -p 8080
+```
+
+---
+
+## Testing
+
+### Automated Unit & Integration Tests
+Run the test suite using Gradle:
+```bash
+./gradlew test
+```
+
+### Manual Testing with Netcat (`nc`)
+Start the server on port `1234`, then open a terminal and connect:
+```bash
+nc localhost 1234
+```
+Type any message and press **Enter** — the server will echo your message back immediately.
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
