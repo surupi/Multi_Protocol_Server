@@ -3,11 +3,10 @@ package org.example;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.example.handler.ClientHandler;
+import org.example.handler.EchoHandler;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -20,12 +19,18 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class EchoServer {
     private final int port;
+    private final ClientHandler handler;
     private volatile boolean running = false;
     private ServerSocket serverSocket;
     private ExecutorService threadPool;
 
     public EchoServer(int port) {
+        this(port, new EchoHandler());
+    }
+
+    public EchoServer(int port, ClientHandler handler) {
         this.port = port;
+        this.handler = handler != null ? handler : new EchoHandler();
     }
 
     public void start() {
@@ -34,23 +39,23 @@ public class EchoServer {
 
         try {
             serverSocket = new ServerSocket(port);
-            log.info("Starting EchoServer on port {}", serverSocket.getLocalPort());
+            log.info("Starting Server on port {}", serverSocket.getLocalPort());
 
             while (running && !serverSocket.isClosed()) {
                 try {
                     Socket clientSocket = serverSocket.accept();
                     log.info("Client connected: {}", clientSocket.getRemoteSocketAddress());
-                    threadPool.execute(() -> handleClient(clientSocket));
+                    threadPool.execute(() -> handler.handle(clientSocket));
                 } catch (SocketException e) {
                     if (!running || serverSocket.isClosed()) {
-                        log.info("EchoServer stopped accepting connections.");
+                        log.info("Server stopped accepting connections.");
                         break;
                     }
                     log.error("Socket error accepting connection", e);
                 }
             }
         } catch (IOException e) {
-            log.error("Failed to start EchoServer on port {}", port, e);
+            log.error("Failed to start Server on port {}", port, e);
         } finally {
             stop();
         }
@@ -60,34 +65,12 @@ public class EchoServer {
         return serverSocket != null ? serverSocket.getLocalPort() : port;
     }
 
-    private void handleClient(Socket clientSocket) {
-        try (
-            BufferedReader reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true)
-        ) {
-            String inputLine;
-            while ((inputLine = reader.readLine()) != null) {
-                log.debug("Received from client {}: {}", clientSocket.getRemoteSocketAddress(), inputLine);
-                writer.println(inputLine);
-            }
-        } catch (IOException e) {
-            log.debug("Client connection ended: {}", e.getMessage());
-        } finally {
-            try {
-                clientSocket.close();
-                log.info("Client connection closed: {}", clientSocket.getRemoteSocketAddress());
-            } catch (IOException e) {
-                log.error("Error closing client socket", e);
-            }
-        }
-    }
-
     public synchronized void stop() {
         if (!running) {
             return;
         }
         this.running = false;
-        log.info("Stopping EchoServer...");
+        log.info("Stopping Server...");
 
         if (serverSocket != null && !serverSocket.isClosed()) {
             try {
@@ -108,6 +91,6 @@ public class EchoServer {
                 Thread.currentThread().interrupt();
             }
         }
-        log.info("EchoServer stopped successfully.");
+        log.info("Server stopped successfully.");
     }
 }

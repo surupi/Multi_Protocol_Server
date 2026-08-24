@@ -1,5 +1,6 @@
 package org.example;
 
+import org.example.handler.GreetingHandler;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -87,5 +88,41 @@ class EchoServerTest {
 
         clientsPool.shutdown();
         assertTrue(clientsPool.awaitTermination(5, TimeUnit.SECONDS), "All clients should finish within timeout");
+    }
+
+    @Test
+    void testGreetingModeIntegration() throws IOException, InterruptedException {
+        EchoServer greetingServer = new EchoServer(0, new GreetingHandler(10));
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(greetingServer::start);
+
+        int attempts = 0;
+        while (greetingServer.getLocalPort() == 0 && attempts++ < 20) {
+            Thread.sleep(50);
+        }
+
+        int port = greetingServer.getLocalPort();
+        try (
+            Socket socket = new Socket("localhost", port);
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))
+        ) {
+            assertEquals("200 server ready", in.readLine());
+
+            out.println("NAME Alice");
+            assertEquals("201 NAME ok", in.readLine());
+
+            out.println("LOCATION Wonderland");
+            assertEquals("201 LOCATION ok", in.readLine());
+
+            out.println("GREET");
+            assertEquals("Hello Alice of Wonderland", in.readLine());
+
+            out.println("QUIT");
+            assertEquals("202 Bye", in.readLine());
+        } finally {
+            greetingServer.stop();
+            executor.shutdownNow();
+        }
     }
 }
