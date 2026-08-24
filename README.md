@@ -1,4 +1,4 @@
-# Java Multi-Mode Server (Echo & Greeting)
+# Java Multi-Protocol Server
 
 A high-performance, multi-threaded TCP Server built in Java using the **Strategy Pattern**. The server listens for incoming TCP socket connections and handles multiple clients concurrently using a cached thread pool (`ExecutorService`). 
 
