@@ -1,2 +1,2 @@
-rootProject.name = "echo-server"
+rootProject.name = "multi-protocol-server"
 
